@@ -7,9 +7,9 @@ export const SETTINGS = {
     "family": "Noto Sans JP",
     "size": 48,
     "weight": "bold",
-    "color": "character",
+    "color": "#ffffff",
     "outlineColor": "#000000",
-    "innerOutlineColor": "#ffffff"
+    "innerOutlineColor": "character"
   },
   "subtitle": {
     "bottomOffset": 40,

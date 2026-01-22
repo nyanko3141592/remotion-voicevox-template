@@ -17,14 +17,15 @@ font:
   # フォントの太さ（normal, bold, 100-900）
   weight: "bold"
 
-  # 字幕の色設定
-  # "character": キャラクターごとの色（colors.zundamon / colors.metan）を使用
-  # または直接色コードを指定: "#ffffff", "#ff0000" など
-  color: "character"
+  # 字幕の文字色
+  # 直接色コードを指定: "#ffffff", "#ff0000" など
+  color: "#ffffff"
 
   # アウトラインの色
+  # "character": キャラクターごとの色（colors.zundamon / colors.metan）を使用
+  # または直接色コードを指定
   outlineColor: "#000000"
-  innerOutlineColor: "#ffffff"
+  innerOutlineColor: "character"
 
 # -------------------------------------------
 # 字幕設定

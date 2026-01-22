@@ -45,14 +45,20 @@ export const Subtitle: React.FC<SubtitleProps> = ({ text, character }) => {
     extrapolateRight: "clamp",
   });
 
+  // キャラクター色を取得
+  const characterColor = character === "zundamon" ? colors.zundamon : colors.metan;
+
   // フォント色の決定
-  const getTextColor = () => {
-    if (font.color === "character") {
-      return character === "zundamon" ? colors.zundamon : colors.metan;
+  const getColor = (colorValue: string) => {
+    if (colorValue === "character") {
+      return characterColor;
     }
-    return font.color;
+    return colorValue;
   };
-  const textColor = getTextColor();
+
+  const textColor = getColor(font.color);
+  const outerOutlineColor = getColor(font.outlineColor);
+  const innerOutlineColorValue = getColor(font.innerOutlineColor);
 
   const baseTextStyle: React.CSSProperties = {
     fontSize: font.size,
@@ -90,11 +96,11 @@ export const Subtitle: React.FC<SubtitleProps> = ({ text, character }) => {
             left: 0,
             top: 0,
             color: "transparent",
-            WebkitTextStroke: `${subtitle.outlineWidth}px ${font.outlineColor}`,
+            WebkitTextStroke: `${subtitle.outlineWidth}px ${outerOutlineColor}`,
             paintOrder: "stroke fill",
           }}
         />
-        {/* 内側アウトライン */}
+        {/* 内側アウトライン（キャラクター色） */}
         <BudouXText
           text={text}
           style={{
@@ -103,7 +109,7 @@ export const Subtitle: React.FC<SubtitleProps> = ({ text, character }) => {
             left: 0,
             top: 0,
             color: "transparent",
-            WebkitTextStroke: `${subtitle.innerOutlineWidth}px ${font.innerOutlineColor}`,
+            WebkitTextStroke: `${subtitle.innerOutlineWidth}px ${innerOutlineColorValue}`,
             paintOrder: "stroke fill",
           }}
         />
