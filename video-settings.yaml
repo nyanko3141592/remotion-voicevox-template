@@ -54,6 +54,12 @@ character:
   # コンテンツを大きく表示したい場合は小さくする
   height: 275
 
+  # PSD立ち絵を使う場合のパス（public/からの相対パス）
+  # 例: images/zunda_psd/xxx.psd
+  # 指定すると、PNGより優先してPSDを読み込み、口レイヤーを推測して口パクします
+  psdPaths:
+    zundamon: "images/zunda_psd/ずんだもん立ち絵素材2.3.psd"
+
   # キャラクター画像を使用するか
   # false: プレースホルダー表示
   # true: 画像を使用

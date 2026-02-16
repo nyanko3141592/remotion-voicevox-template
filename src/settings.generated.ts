@@ -20,6 +20,9 @@ export const SETTINGS = {
   },
   "character": {
     "height": 275,
+    "psdPaths": {
+      "zundamon": "images/zunda_psd/ずんだもん立ち絵素材2.3.psd"
+    },
     "useImages": true,
     "imagesBasePath": "images"
   },
@@ -44,10 +47,15 @@ export const SETTINGS = {
 
 // キャラクターごとの利用可能な画像ファイル
 export const AVAILABLE_IMAGES: Record<string, string[]> = {
+  "kuro_zunda": [
+    "mouth_close.png",
+    "mouth_open.png"
+  ],
   "metan": [
     "mouth_close.png",
     "mouth_open.png"
   ],
+  "zunda_psd": [],
   "zundamon": [
     "mouth_close.png",
     "mouth_open.png"

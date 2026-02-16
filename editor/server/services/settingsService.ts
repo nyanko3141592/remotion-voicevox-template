@@ -23,6 +23,7 @@ export interface VideoSettings {
   };
   character: {
     height: number;
+    psdPaths?: Record<string, string>;
     useImages: boolean;
     imagesBasePath: string;
   };

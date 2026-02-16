@@ -5,12 +5,12 @@
   "scripts": {
     "start": "npm run sync && remotion studio src/index.ts",
     "build": "npm run sync && remotion render src/index.ts Main out/video.mp4",
-    "voices": "npx ts-node scripts/generate-voices.ts && npm run sync-script",
+    "voices": "tsx scripts/generate-voices.ts && npm run sync-script",
     "preview": "npm run sync && remotion preview src/index.ts",
     "sync": "npm run sync-settings && npm run sync-script",
-    "sync-settings": "npx ts-node scripts/sync-settings.ts",
-    "sync-script": "npx ts-node scripts/sync-script.ts",
-    "init": "npx ts-node scripts/init-project.ts",
+    "sync-settings": "tsx scripts/sync-settings.ts",
+    "sync-script": "tsx scripts/sync-script.ts",
+    "init": "tsx scripts/init-project.ts",
     "editor": "concurrently \"npm run editor:server\" \"npm run editor:client\"",
     "editor:client": "cd editor && npm run dev",
     "editor:server": "cd editor && npm run server",
@@ -22,10 +22,12 @@
     "@remotion/cli": "^4.0.0",
     "@remotion/google-fonts": "^4.0.409",
     "@remotion/renderer": "^4.0.0",
+    "ag-psd": "^30.1.0",
     "budoux": "^0.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "remotion": "^4.0.0",
+    "util": "^0.12.5",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
@@ -33,6 +35,7 @@
     "@types/react": "^18.2.0",
     "concurrently": "^8.2.2",
     "ts-node": "^10.9.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.0.0"
   }
 }

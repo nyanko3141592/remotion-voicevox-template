@@ -1,6 +1,132 @@
-import { Img, staticFile, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import { Img, staticFile, useCurrentFrame, useVideoConfig, interpolate, delayRender, continueRender } from "remotion";
 import { DEFAULT_CHARACTERS, CharacterId } from "../config";
 import { SETTINGS, AVAILABLE_IMAGES } from "../settings.generated";
+import { useEffect, useMemo, useState } from "react";
+
+type PsdAny = any;
+
+const isMouthLayerName = (name: string) => {
+  const n = name.toLowerCase();
+  return n.includes("mouth") || name.includes("口") || name.includes("くち");
+};
+
+const isMouthOpenName = (name: string) => {
+  const n = name.toLowerCase();
+  return n.includes("open") || name.includes("開") || name.includes("あ");
+};
+
+const isMouthCloseName = (name: string) => {
+  const n = name.toLowerCase();
+  return n.includes("close") || name.includes("閉") || name.includes("い");
+};
+
+type LeafLayer = {
+  name?: string;
+  hidden?: boolean;
+  canvas?: HTMLCanvasElement;
+  left?: number;
+  top?: number;
+  children?: LeafLayer[];
+};
+
+const collectLeafLayers = (node: LeafLayer, parentHidden = false): LeafLayer[] => {
+  const hidden = parentHidden || Boolean(node.hidden);
+  if (node.children && node.children.length > 0) {
+    // draw order: bottom -> top
+    return node.children.flatMap((child) => collectLeafLayers(child, hidden));
+  }
+  if (hidden) return [];
+  if (!node.canvas) return [];
+  return [node];
+};
+
+const renderComposite = (
+  psd: { width: number; height: number; children?: LeafLayer[] },
+  includeMouthLayer: LeafLayer | null
+): HTMLCanvasElement => {
+  const canvas = document.createElement("canvas");
+  canvas.width = psd.width;
+  canvas.height = psd.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  const roots = psd.children ?? [];
+  const leafLayers = roots.flatMap((r) => collectLeafLayers(r, false));
+
+  const mouthLayers = leafLayers.filter((l) => isMouthLayerName(l.name ?? ""));
+  const include = includeMouthLayer;
+
+  // Best-effort: draw from bottom to top
+  for (const layer of leafLayers.slice().reverse()) {
+    const isMouth = mouthLayers.includes(layer);
+    if (isMouth) {
+      if (!include || layer !== include) continue;
+    }
+
+    const left = layer.left ?? 0;
+    const top = layer.top ?? 0;
+    ctx.drawImage(layer.canvas as HTMLCanvasElement, left, top);
+  }
+
+  return canvas;
+};
+
+const usePsdMouthVariants = (psdPublicPath: string | undefined) => {
+  const [variants, setVariants] = useState<{ open: string; close: string } | null>(null);
+
+  const renderHandle = useMemo(() => {
+    if (!psdPublicPath) return null;
+    return delayRender(`load-psd:${psdPublicPath}`);
+  }, [psdPublicPath]);
+
+  useEffect(() => {
+    if (!psdPublicPath) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const url = staticFile(psdPublicPath);
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch PSD (${res.status}): ${url}`);
+        }
+        const buffer = await res.arrayBuffer();
+
+        const mod = (await import("ag-psd")) as PsdAny;
+        const psd = mod.readPsd(buffer) as { width: number; height: number; children?: LeafLayer[] };
+
+        const roots = psd.children ?? [];
+        const leafLayers = roots.flatMap((r) => collectLeafLayers(r, false));
+        const mouthCandidates = leafLayers.filter((l) => isMouthLayerName(l.name ?? ""));
+
+        const openLayer = mouthCandidates.find((l) => isMouthOpenName(l.name ?? "")) ?? mouthCandidates[0] ?? null;
+        const closeLayer = mouthCandidates.find((l) => isMouthCloseName(l.name ?? "")) ?? mouthCandidates[1] ?? mouthCandidates[0] ?? null;
+
+        const openCanvas = renderComposite(psd, openLayer);
+        const closeCanvas = renderComposite(psd, closeLayer);
+
+        const open = openCanvas.toDataURL("image/png");
+        const close = closeCanvas.toDataURL("image/png");
+
+        if (!cancelled) {
+          setVariants({ open, close });
+        }
+      } catch (e) {
+        console.error("Failed to load PSD:", e);
+      } finally {
+        if (renderHandle) {
+          continueRender(renderHandle);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [psdPublicPath, renderHandle]);
+
+  return variants;
+};
 
 interface CharacterProps {
   characterId: CharacterId;
@@ -75,6 +201,9 @@ export const Character: React.FC<CharacterProps> = ({
   const imageFileName = getImageFileName(characterId, emotion, mouthOpen);
   const currentImage = `${basePath}/${characterId}/${imageFileName}`;
 
+  const psdPath = SETTINGS.character.psdPaths?.[characterId];
+  const psdVariants = usePsdMouthVariants(psdPath);
+
   // 設定ファイルのuseImagesフラグをチェック
   const hasImage = SETTINGS.character.useImages;
 
@@ -89,14 +218,27 @@ export const Character: React.FC<CharacterProps> = ({
       }}
     >
       {hasImage ? (
-        <Img
-          src={staticFile(currentImage)}
-          style={{
-            height: SETTINGS.character.height,
-            objectFit: "contain",
-            transform: characterConfig.flipX ? "scaleX(-1)" : "none",
-          }}
-        />
+        psdPath ? (
+          psdVariants ? (
+            <Img
+              src={mouthOpen ? psdVariants.open : psdVariants.close}
+              style={{
+                height: SETTINGS.character.height,
+                objectFit: "contain",
+                transform: characterConfig.flipX ? "scaleX(-1)" : "none",
+              }}
+            />
+          ) : null
+        ) : (
+          <Img
+            src={staticFile(currentImage)}
+            style={{
+              height: SETTINGS.character.height,
+              objectFit: "contain",
+              transform: characterConfig.flipX ? "scaleX(-1)" : "none",
+            }}
+          />
+        )
       ) : (
         // 画像がない場合のプレースホルダー
         <div
