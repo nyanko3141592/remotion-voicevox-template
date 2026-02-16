@@ -1,9 +1,11 @@
+import { SETTINGS } from "./settings.generated";
+
 // 動画設定
 export const VIDEO_CONFIG = {
-  width: 1920,
-  height: 1080,
-  fps: 30,
-  playbackRate: 1.2, // 再生速度（音声生成時に考慮）
+  width: SETTINGS.video.width,
+  height: SETTINGS.video.height,
+  fps: SETTINGS.video.fps,
+  playbackRate: SETTINGS.video.playbackRate, // 再生速度（音声生成時に考慮）
 };
 
 // カラーパレット（黒板風デザイン）
@@ -11,6 +13,7 @@ export const COLORS = {
   background: "#ffffff",      // 外側の白背景
   blackboard: "#2d5a3d",      // 黒板の緑
   blackboardBorder: "#8B4513", // 黒板の茶色フチ
+  safeArea: "#000000",        // ショート向け下側の安全余白（黒）
   text: "#ffffff",            // 白文字
   textMuted: "#e0e0e0",
   primary: "#3b82f6",
