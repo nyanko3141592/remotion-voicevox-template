@@ -15,7 +15,12 @@ const getAdjustedFrames = (frames: number): number =>
 
 export const Main: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
+
+  // 縦動画（ショート等）の場合のみ、下側に黒塗りの安全領域を設ける（字幕/キャラはこの領域を避ける）
+  const isVertical = height >= width;
+  const safeAreaHeight = isVertical ? 400 : 0;
+  const blackboardBottomOffset = isVertical ? safeAreaHeight : 160;
 
   // 現在のセリフを計算
   let accumulatedFrames = 0;
@@ -65,6 +70,20 @@ export const Main: React.FC = () => {
         fontFamily: "'Noto Sans JP', 'Hiragino Sans', sans-serif",
       }}
     >
+      {/* 下側の黒塗り安全領域（縦動画のみ） */}
+      {safeAreaHeight > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: safeAreaHeight,
+            background: COLORS.safeArea,
+          }}
+        />
+      )}
+
       {/* 黒板背景 */}
       <div
         style={{
@@ -72,7 +91,7 @@ export const Main: React.FC = () => {
           top: 40,
           left: 60,
           right: 60,
-          bottom: 160,
+          bottom: blackboardBottomOffset,
           background: COLORS.blackboard,
           borderRadius: 8,
         }}
@@ -83,7 +102,7 @@ export const Main: React.FC = () => {
           position: "absolute",
           left: 60,
           right: 60,
-          bottom: 160,
+          bottom: blackboardBottomOffset,
           height: 24,
           background: COLORS.blackboardBorder,
           borderRadius: "0 0 8px 8px",
@@ -133,16 +152,26 @@ export const Main: React.FC = () => {
       />
 
       {/* キャラクター */}
-      <Character
-        characterId="metan"
-        isSpeaking={isSpeaking && currentLine?.character === "metan"}
-        emotion={currentLine?.character === "metan" ? currentLine.emotion : "normal"}
-      />
-      <Character
-        characterId="zundamon"
-        isSpeaking={isSpeaking && currentLine?.character === "zundamon"}
-        emotion={currentLine?.character === "zundamon" ? currentLine.emotion : "normal"}
-      />
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: safeAreaHeight,
+        }}
+      >
+        <Character
+          characterId="metan"
+          isSpeaking={isSpeaking && currentLine?.character === "metan"}
+          emotion={currentLine?.character === "metan" ? currentLine.emotion : "normal"}
+        />
+        <Character
+          characterId="zundamon"
+          isSpeaking={isSpeaking && currentLine?.character === "zundamon"}
+          emotion={currentLine?.character === "zundamon" ? currentLine.emotion : "normal"}
+        />
+      </div>
 
       {/* 字幕 */}
       {currentLine && (
@@ -151,10 +180,20 @@ export const Main: React.FC = () => {
           from={currentLineStartFrame}
           durationInFrames={getLineDuration(currentLine)}
         >
-          <Subtitle
-            text={currentLine.displayText ?? currentLine.text}
-            character={currentLine.character}
-          />
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: safeAreaHeight,
+            }}
+          >
+            <Subtitle
+              text={currentLine.displayText ?? currentLine.text}
+              character={currentLine.character}
+            />
+          </div>
         </Sequence>
       )}
     </AbsoluteFill>

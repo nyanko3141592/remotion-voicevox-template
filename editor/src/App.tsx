@@ -7,9 +7,21 @@ import { useScript } from './hooks/useScript';
 import { useSettings } from './hooks/useSettings';
 import { useMetadata } from './hooks/useMetadata';
 
+const ASPECT_PRESETS: Record<string, { width: number; height: number }> = {
+  '16:9': { width: 1920, height: 1080 },
+  '9:16': { width: 1080, height: 1920 },
+  '1:1': { width: 1080, height: 1080 },
+};
+
+const getAspectKey = (width: number, height: number): string => {
+  const matched = Object.entries(ASPECT_PRESETS).find(([, p]) => p.width === width && p.height === height);
+  return matched ? matched[0] : 'custom';
+};
+
 function App() {
   const [currentTab, setCurrentTab] = useState<'script' | 'settings'>('script');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [focusVideoSizeTrigger, setFocusVideoSizeTrigger] = useState(0);
 
   const { script, loading: scriptLoading, error: scriptError, updateLine, createLine, deleteLine, refresh: refreshScript } = useScript();
   const { settings, loading: settingsLoading, error: settingsError, updateSettings, refresh: refreshSettings } = useSettings();
@@ -66,7 +78,31 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header currentTab={currentTab} onTabChange={setCurrentTab} />
+      {settings && (
+        <Header
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+          aspect={getAspectKey(settings.video.width, settings.video.height)}
+          onAspectChange={async (aspect) => {
+            if (aspect === 'custom') {
+              setCurrentTab('settings');
+              setFocusVideoSizeTrigger((v) => v + 1);
+              return;
+            }
+            const preset = ASPECT_PRESETS[aspect];
+            if (!preset) return;
+            await updateSettings({
+              ...settings,
+              video: {
+                ...settings.video,
+                width: preset.width,
+                height: preset.height,
+              },
+            });
+            refreshSettings();
+          }}
+        />
+      )}
       <div className="flex flex-1">
         <Sidebar
           onPreview={handlePreview}
@@ -87,6 +123,7 @@ function App() {
           {currentTab === 'settings' && settings && (
             <SettingsForm
               settings={settings}
+              focusVideoSizeTrigger={focusVideoSizeTrigger}
               onSave={async (data) => {
                 await updateSettings(data);
                 refreshSettings();
